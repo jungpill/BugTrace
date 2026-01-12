@@ -1,4 +1,4 @@
-import type { ErrorRecord } from './type/types.ts'
+import type { ErrorRecord } from '../type/types'
 
 const RECORDS_KEY = "errorRecords";
 const MAX_RECORDS = 20;

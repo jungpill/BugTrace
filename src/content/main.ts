@@ -1,4 +1,4 @@
-import type { Breadcrumb, ErrorRecord } from "./type/types";
+import type { Breadcrumb, ErrorRecord } from "../type/types";
 
 type EnabledHosts = Record<string, boolean>;
 

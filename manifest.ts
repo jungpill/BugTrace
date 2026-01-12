@@ -2,14 +2,14 @@ import type { ManifestV3Export } from "@crxjs/vite-plugin";
 
 const manifest: ManifestV3Export = {
   manifest_version: 3,
-  name: "ReproTrace (dev)",
+  name: "BugTrace (dev)",
   version: "0.0.1",
   action: {
-    default_title: "ReproTrace",
+    default_title: "BugTrace",
     default_popup: "src/popup/index.html",
   },
   background: {
-    service_worker: "src/background.ts",
+    service_worker: "src/background/service-worker.ts",
     type: "module",
   },
   permissions: ["storage", "activeTab", "tabs"],
@@ -19,7 +19,7 @@ const manifest: ManifestV3Export = {
   content_scripts: [
     {
       matches: ["http://*/*", "https://*/*"],
-      js: ["src/content.ts"],
+      js: ["src/content/main.ts"],
       run_at: "document_start",
     },
   ],
