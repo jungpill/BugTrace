@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import type { ErrorRecord } from "../type/types";
+import "./index.css";
 
 function formatRecord(r: ErrorRecord) {
   const lines = [
@@ -119,7 +120,7 @@ function Popup() {
       </div>
 
       <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-        <button disabled={!selected} onClick={copy} style={{ flex: 1 }}>
+        <button className="bg-blue-500 text-white p-2 rounded flex-1" onClick={() => setSelected(null)} disabled={!selected}>
           Copy Report
         </button>
       </div>
