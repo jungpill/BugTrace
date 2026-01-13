@@ -4,7 +4,7 @@ import { BiSolidBellRing } from "react-icons/bi";
 const PopupHeader = () => {
     return(
         <div className="
-        bg-[#F3F4F6] flex items-center content-center py-2 px-4 w-full gap-2 
+        bg-[#F3F3F3] flex items-center content-center py-2 px-4 w-full gap-2 
         ">
             <AppImage 
             name="logo" 

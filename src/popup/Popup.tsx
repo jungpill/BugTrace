@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import type { ErrorRecord } from "../type/types";
 import PopupHeader from "../components/mainPopup/PopupHeader";
+import SiteCaptureToggle from "../components/mainPopup/SiteCaptureToggle";
+import RecentError from "../components/mainPopup/RecentError";
 
 function formatRecord(r: ErrorRecord) {
   const lines = [
@@ -89,6 +91,11 @@ const Popup = () =>{
   return (
     <div className="w-90 rounded-2xl flex flex-col ">
         <PopupHeader/>
+
+        <SiteCaptureToggle/>
+
+        <RecentError/>
+
       <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
         <button className="bg-blue-500 text-white p-2 rounded flex-1" onClick={() => setSelected(null)} disabled={!selected}>
           Copy Report
