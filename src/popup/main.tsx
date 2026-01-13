@@ -4,6 +4,7 @@ import "./index.css";
 import Popup from "./Popup";
 import { useState } from "react";
 import { useViewStore } from "../Store/useViewStore";
+import DetailPopup from "../components/detailPopup/DetailPopup";
 
 export type PageType = "MAIN" | "DETAIL" | "SETTINGS";
 
@@ -21,12 +22,11 @@ const Root = () => {
         <Popup/>
       )}
       
-      {/* {currentPage === "DETAIL" && (
-        <DetailPage 
-          data={selectedData} 
-          onBack={() => setCurrentPage("MAIN")} 
+      {currentPage === "DETAIL" && (
+        <DetailPopup
+          
         />
-      )} */}
+      )}
     </React.StrictMode>
   );
 };

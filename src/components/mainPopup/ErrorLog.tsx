@@ -1,4 +1,5 @@
 import { MdKeyboardArrowRight } from "react-icons/md";
+import { useViewStore } from "../../Store/useViewStore";
 
 interface ErrorProps {
     title: string
@@ -11,6 +12,8 @@ const ErrorLog = ({
     dateMs,
     domain
     } : ErrorProps) => {
+
+    const gotoDetail = useViewStore((p) => p.goToDetail)
 
     function formatRelativeTime(dateMs: number, nowMs = Date.now()) {
         const diffSec = Math.max(0, Math.floor((nowMs - dateMs) / 1000));
@@ -51,6 +54,7 @@ const ErrorLog = ({
                 ml-auto w-7 h-7 text-gray-500 cursor-pointer rounded-xl 
                 hover:bg-gray-100
                 "
+                onClick={gotoDetail}
                 />
             </div>
         </div>
