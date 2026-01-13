@@ -1,6 +1,14 @@
-import ErrorLog from "./ErrorLog";
+import { useViewStore } from "../../Store/useViewStore";
+import { useEffect } from "react";
 
 const RecentError = () => {
+
+    const records = useViewStore((p) => p.records)
+    const fetchRecords = useViewStore((p) => p.fetchRecords)
+
+    useEffect(() => {
+        fetchRecords(); 
+    }, []);
 
     return(
         <div className="flex flex-col w-full bg-[#F1F3F4] px-1">
@@ -8,26 +16,22 @@ const RecentError = () => {
                 Recent Errors
             </div>
 
-            <div className="flex flex-col rounded-b-md bg-white px-2 py-2 gap-2">
-                <ErrorLog
-                    title="TypeError: Cannot read properties"
-                    dateMs={Date.now() - 20000 * 1000}
-                    domain="dd"
-                />
+            <div className="min-h-20 justify-center items-center flex flex-col rounded-b-md bg-white px-2 py-2 gap-2">
+                {
+                    records.length ? 
+                    'no Error':
+                    records.map((record, ) => {
+                    return(
+                        <div key={record.capturedAt}>
+                            <p>{record.error.message}</p>
+                        </div>
+                    )
+                })
+                }
 
-                <ErrorLog
-                    title="TypeError: Cannot read properties"
-                    dateMs={Date.now() - 20000 * 1000}
-                    domain="dd"
-                />
-
-                <ErrorLog
-                    title="TypeError: Cannot read properties"
-                    dateMs={Date.now() - 20000 * 1000}
-                    domain="dd"
-                />
-
-                
+                <p className="text-[14px] flex">
+                    확인된 에러가 없습니다.
+                </p>
             </div>
         </div>
     )
