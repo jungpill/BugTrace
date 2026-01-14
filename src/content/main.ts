@@ -1,5 +1,7 @@
 import type { Breadcrumb, ErrorRecord } from "../type/types";
 
+console.log("BugTrace Content Script Loaded! Host:", location.host);
+
 type EnabledHosts = Record<string, boolean>;
 
 type HistoryStateFn = (data: any, unused: string, url?: string | URL | null) => void;
@@ -36,31 +38,36 @@ function summarizeElement(el: Element): string {
 }
 
 async function refreshEnabled() {
-  const host = location.host;
+  // www. 을 제거하여 팝업에서 저장한 형식과 맞춤
+  const host = location.host.replace(/^www\./, ""); 
 
-  const stored = (await chrome.storage.local.get("enabledHosts")) as {
-    enabledHosts?: unknown;
-  };
-
+  const stored = (await chrome.storage.local.get("enabledHosts"));
   const enabledHosts: EnabledHosts = isEnabledHosts(stored.enabledHosts)
     ? (stored.enabledHosts as EnabledHosts)
     : {};
 
   enabled = Boolean(enabledHosts[host]);
-  if (!enabled) buffer = [];
+  
+  // 디버깅을 위해 로그 남기기
+  if (enabled) {
+    console.log(`%c[BugTrace] 감시 활성화됨: ${host}`, "color: green; font-weight: bold");
+  } else {
+    console.log(`%c[BugTrace] 감시 비활성화 상태: ${host}`, "color: gray");
+    buffer = [];
+  }
 }
 
+// storage 변경 리스너도 동일하게 적용
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== "local") return;
+  if (area !== "local" || !changes.enabledHosts) return;
+  
+  const host = location.host.replace(/^www\./, "");
+  const nextHosts: EnabledHosts = isEnabledHosts(changes.enabledHosts.newValue)
+    ? changes.enabledHosts.newValue
+    : {};
 
-  if (changes.enabledHosts) {
-    const nextHosts: EnabledHosts = isEnabledHosts(changes.enabledHosts.newValue)
-      ? (changes.enabledHosts.newValue as EnabledHosts)
-      : {};
-
-    enabled = Boolean(nextHosts[location.host]);
-    if (!enabled) buffer = [];
-  }
+  enabled = Boolean(nextHosts[host]);
+  if (!enabled) buffer = [];
 });
 
 function hookRoute() {
@@ -111,6 +118,13 @@ function captureAndSend(source: "error" | "unhandledrejection", message: string,
     breadcrumbs: [...buffer],
     env: { ua: navigator.userAgent, viewport: { w: window.innerWidth, h: window.innerHeight } },
   };
+
+  console.log("[BugTrace] captureAndSend called", { enabled, message });
+  chrome.runtime.sendMessage({ type: "CAPTURE_ERROR", record }, () => {
+    if (chrome.runtime.lastError) {
+      console.warn("sendMessage failed:", chrome.runtime.lastError.message);
+    }
+  });
 
   chrome.runtime.sendMessage({ type: "CAPTURE_ERROR", record });
 }

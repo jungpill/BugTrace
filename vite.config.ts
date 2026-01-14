@@ -8,6 +8,13 @@ export default defineConfig({
   server: {
     cors: {
       origin: [/chrome-extension:\/\//],
+    },port: 5173,
+    strictPort: true,
+    hmr: {
+      port: 5173,
+      // 익스텐션 환경에서는 프로토콜을 명시하는 것이 안정적입니다.
+      protocol: 'ws',
+      host: 'localhost',
     },
   },
 });
