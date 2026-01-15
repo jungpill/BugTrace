@@ -3,7 +3,7 @@ export type Breadcrumb =
   | { type: "route"; ts: number; from: string; to: string };
 
 export type CapturedError = {
-  source: "error" | "unhandledrejection";
+  source: "error" | "unhandledrejection" | "network";
   ts: number;
   url: string;
   message: string;

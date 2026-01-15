@@ -1,18 +1,35 @@
 // src/content/main.ts
 import type { Breadcrumb, ErrorRecord } from "../type/types";
 
+// 페이지가 열릴때마다 탭의 문서에 주입되어 실행
 console.log("BugTrace Content Script Loaded! Host:", location.host);
 
 type EnabledHosts = Record<string, boolean>;
 type HistoryStateFn = (data: any, unused: string, url?: string | URL | null) => void;
 
-// hook.ts(MAIN world) -> window.postMessage payload 타입
+// hook.js(MAIN world) -> window.postMessage payload 타입 (에러)
 type FromPageErrorMsg = {
   type: "FROM_PAGE_ERROR";
-  // hook.ts에서 보내는 source (runtime/promise/console)
-  source: string;
+  source: string; // runtime/promise/console/network/debug 등
   message: string;
   stack?: string;
+};
+
+// hook.js(MAIN world) -> window.postMessage payload 타입 (이벤트: 네트워크 등)
+type FromPageEventMsg = {
+  type: "FROM_PAGE_EVENT";
+  event: {
+    kind: "network";
+    ts: number;
+    transport: "fetch" | "xhr";
+    phase: "end";
+    method: string;
+    url: string;
+    status?: number;
+    ok?: boolean;
+    durationMs: number;
+    errorType?: "reject" | "timeout" | "abort" | "error";
+  };
 };
 
 const MAX_EVENTS = 50;
@@ -51,35 +68,84 @@ async function refreshEnabled() {
   console.log("[BugTrace] 초기 상태 확인:", { hostKey, enabled, enabledHosts });
 }
 
-// ----------------- page hook -> content script bridge -----------------
-
-window.addEventListener("message", (event) => {
-  const data = event.data as FromPageErrorMsg | undefined;
-  if (!data || data.type !== "FROM_PAGE_ERROR") return;
-
-  const { source: pageSource, message, stack } = data;
-
-  console.log("[BugTrace-Main] 🚀 페이지로부터 에러 수신:", { pageSource, message });
-
-  chrome.storage.local.get("enabledHosts").then((stored) => {
-    const hosts = isEnabledHosts(stored.enabledHosts) ? stored.enabledHosts : {};
-    const currentEnabled = !!hosts[hostKey];
-
-    if (!currentEnabled) {
-      console.warn("[BugTrace-Main] 수집 비활성화(OFF)라 전송 스킵");
+// 공통 record 생성/전송 (에러/네트워크 승격에서 재사용)
+function sendRecord(record: ErrorRecord) {
+  chrome.runtime.sendMessage({ type: "CAPTURE_ERROR", record }, (res) => {
+    if (chrome.runtime.lastError) {
+      console.warn("[BugTrace-Main] CAPTURE_ERROR 전송 실패:", chrome.runtime.lastError.message);
       return;
     }
+    console.log("[BugTrace-Main] ✅ 서비스 워커 전송 완료:", res);
+  });
+}
+
+async function isCurrentlyEnabled(): Promise<boolean> {
+  const stored = await chrome.storage.local.get("enabledHosts");
+  const hosts = isEnabledHosts(stored.enabledHosts) ? stored.enabledHosts : {};
+  return !!hosts[hostKey];
+}
+
+// 네트워크 이벤트를 ErrorRecord로 “승격”할지 정책 (원하면 조정)
+function shouldPromoteNetwork(ev: FromPageEventMsg["event"]): boolean {
+  // 1) 네트워크 레벨 실패: reject/timeout/error/abort
+  if (ev.errorType) return true;
+  // 2) 400 ~ 500 사이 에러 
+  if (typeof ev.status === "number" && ev.status >= 400){
+    console.log('400이상 에러 감지! ')
+    return true
+  }
+  // 3) 서버 에러(500+)
+  if (typeof ev.status === "number" && ev.status >= 500) return true;
+  // 4) 너무 느린 요청(3초 이상)
+  if (typeof ev.durationMs === "number" && ev.durationMs >= 3000) return true;
+  return false;
+}
+
+// ----------------- page hook -> content script bridge -----------------
+
+window.addEventListener("message", async (event) => {
+  const data = event.data as (FromPageErrorMsg | FromPageEventMsg) | undefined;
+  if (!data) return;
+
+  // ---- 1) 네트워크 이벤트 수신 (FROM_PAGE_EVENT) ----
+  if (data.type === "FROM_PAGE_EVENT" && data.event?.kind === "network") {
+    const ev = data.event;
+
+    // breadcrumbs에 네트워크 이벤트도 쌓기 (Breadcrumb 타입에 network가 없으면 타입 에러 날 수 있어 임시 캐스팅)
+    pushEvent({
+      type: "network",
+      ts: ev.ts,
+      transport: ev.transport,
+      method: ev.method,
+      url: ev.url,
+      status: ev.status,
+      ok: ev.ok,
+      durationMs: ev.durationMs,
+      errorType: ev.errorType,
+    } as unknown as Breadcrumb);
+
+    // enabled=false면 pushEvent가 무시되지만, “승격”은 enabledHosts 기준으로 따로 체크
+    const promote = shouldPromoteNetwork(ev);
+    if (!promote) return;
+
+    const currentEnabled = await isCurrentlyEnabled();
+    if (!currentEnabled) return;
+
+    const message =
+      `[network] ${String(ev.transport).toUpperCase()} ${ev.method} ${ev.url} ` +
+      `${ev.errorType ? `(${ev.errorType})` : `status=${ev.status}`} duration=${ev.durationMs}ms`;
 
     const record: ErrorRecord = {
       id: `${Date.now()}`,
       host: hostKey,
       capturedAt: Date.now(),
       error: {
-        source: "error",
+        source: "network",
         ts: Date.now(),
         url: window.location.href,
-        message: `[${pageSource}] ${message}`,
-        stack,
+        message,
+        // 네트워크는 스택이 없으니 생략
+        stack: undefined,
       },
       breadcrumbs: [...buffer],
       env: {
@@ -88,14 +154,43 @@ window.addEventListener("message", (event) => {
       },
     };
 
-    chrome.runtime.sendMessage({ type: "CAPTURE_ERROR", record }, (res) => {
-      if (chrome.runtime.lastError) {
-        console.warn("[BugTrace-Main] CAPTURE_ERROR 전송 실패:", chrome.runtime.lastError.message);
-        return;
-      }
-      console.log("[BugTrace-Main] ✅ 서비스 워커 전송 완료:", res);
-    });
-  });
+    console.log("[BugTrace-Main] 🌐 네트워크 실패/지연 승격:", { message });
+    sendRecord(record);
+    return;
+  }
+
+  // ---- 2) 기존 에러 수신 (FROM_PAGE_ERROR) ----
+  if (data.type !== "FROM_PAGE_ERROR") return;
+
+  const { source: pageSource, message, stack } = data;
+
+  console.log("[BugTrace-Main] 🚀 페이지로부터 에러 수신:", { pageSource, message });
+
+  const currentEnabled = await isCurrentlyEnabled();
+  if (!currentEnabled) {
+    console.warn("[BugTrace-Main] 수집 비활성화(OFF)라 전송 스킵");
+    return;
+  }
+
+  const record: ErrorRecord = {
+    id: `${Date.now()}`,
+    host: hostKey,
+    capturedAt: Date.now(),
+    error: {
+      source: "error",
+      ts: Date.now(),
+      url: window.location.href,
+      message: `[${pageSource}] ${message}`,
+      stack,
+    },
+    breadcrumbs: [...buffer],
+    env: {
+      ua: navigator.userAgent,
+      viewport: { w: window.innerWidth, h: window.innerHeight },
+    },
+  };
+
+  sendRecord(record);
 });
 
 // ----------------- browser hooks -----------------
@@ -108,7 +203,7 @@ function hookRoute() {
       const from = location.href;
       const ret = orig.apply(this, args);
       const to = location.href;
-      pushEvent({ type: "route", ts: Date.now(), from, to });
+      pushEvent({ type: "route", ts: Date.now(), from, to } as Breadcrumb);
       return ret;
     } as unknown as HistoryStateFn;
   };
@@ -117,11 +212,11 @@ function hookRoute() {
   wrap("replaceState");
 
   window.addEventListener("popstate", () => {
-    pushEvent({ type: "route", ts: Date.now(), from: "popstate", to: location.href });
+    pushEvent({ type: "route", ts: Date.now(), from: "popstate", to: location.href } as Breadcrumb);
   });
 
   window.addEventListener("hashchange", () => {
-    pushEvent({ type: "route", ts: Date.now(), from: "hashchange", to: location.href });
+    pushEvent({ type: "route", ts: Date.now(), from: "hashchange", to: location.href } as Breadcrumb);
   });
 }
 
@@ -131,7 +226,7 @@ function hookClicks() {
     (ev) => {
       const t = ev.target;
       if (!(t instanceof Element)) return;
-      pushEvent({ type: "click", ts: Date.now(), url: location.href, target: summarizeElement(t) });
+      pushEvent({ type: "click", ts: Date.now(), url: location.href, target: summarizeElement(t) } as Breadcrumb);
     },
     { capture: true }
   );
@@ -154,7 +249,7 @@ function injectHook() {
   }
 
   const script = document.createElement("script");
-  script.src = chrome.runtime.getURL("assets/hook.js");
+  script.src = chrome.runtime.getURL("assets/hook.js"); // 실제 주입되는 hook.js
   script.async = false;
   root.appendChild(script);
   script.remove();
@@ -171,8 +266,4 @@ injectHook();
   hookClicks();
 
   console.log("[BugTrace] 모든 감시 준비 완료");
-
-  // 디버깅이 필요하면 잠깐 켰다가 끄세요.
-  // 이게 저장되면 파이프라인은 정상이고, 페이지 에러만 안 잡히는 문제는 hook.ts 쪽입니다.
-  // setTimeout(() => { throw new Error("TEST_FROM_CONTENT_SCRIPT"); }, 2000);
 })();

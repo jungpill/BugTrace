@@ -1,4 +1,3 @@
-import type { ErrorRecord } from "../../type/types";
 import { useViewStore } from "../../Store/useViewStore";
 
 const DetailLog = () => {
