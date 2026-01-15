@@ -12,7 +12,7 @@ interface ViewState {
   // Actions
   goToMain: () => void;
   goToSettings: () => void;
-  goToDetail: () => void;
+  goToDetail: (record: ErrorRecord) => void;
   
   // 에러 로그 관련 액션
   fetchRecords: () => Promise<void>;
@@ -26,7 +26,7 @@ export const useViewStore = create<ViewState>((set) => ({
 
   goToMain: () => set({ currentPage: "MAIN", selectedRecord: null }),
   goToSettings: () => set({ currentPage: "SETTINGS" }),
-  goToDetail: () => set({currentPage: 'DETAIL'}),
+  goToDetail: (record) => set({currentPage: 'DETAIL', selectedRecord: record}),
 
   fetchRecords: async () => {
     chrome.runtime.sendMessage({ type: "GET_RECORDS" }, (response) => {

@@ -1,7 +1,11 @@
 import { useViewStore } from "../../Store/useViewStore";
 import { useEffect } from "react";
+import { IoIosArrowForward } from "react-icons/io";
+import ErrorLog from "./ErrorLog";
 
 const RecentError = () => {
+
+  const gotoDetail = useViewStore((p) => p.goToDetail)
   const records = useViewStore((p) => p.records);
   const fetchRecords = useViewStore((p) => p.fetchRecords);
 
@@ -10,7 +14,7 @@ const RecentError = () => {
   }, []);
 
   return (
-    <div className="flex flex-col w-full bg-[#F1F3F4] px-1">
+    <div className="flex flex-col w-full bg-[#F1F3F4]">
       <div className="px-2 py-2 text-[14px] text-gray-700 font-[500]">
         Recent Errors
       </div>
@@ -21,10 +25,14 @@ const RecentError = () => {
           records.map((record) => (
             <div 
               key={record.id} 
-              className="w-full p-2 border-b last:border-0 hover:bg-gray-50 cursor-pointer"
+              className="flex w-full p-2 border-b last:border-0"
             >
-              <p className="text-sm font-bold text-red-600 truncate">{record.error.message}</p>
-              <p className="text-[11px] text-gray-400">{new Date(record.capturedAt).toLocaleTimeString()}</p>
+              <ErrorLog
+              title={record.error.message}
+              dateMs={Number(new Date(record.capturedAt))}
+              domain={record.host}
+              record={record}
+              />
             </div>
           ))
         ) : (

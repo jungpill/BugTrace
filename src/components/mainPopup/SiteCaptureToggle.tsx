@@ -10,23 +10,23 @@ const SiteCaptureToggle = () => {
     const toggleActive = useActiveStore((p) => p.toggleActive);
 
     useEffect(() => {
-        if (typeof chrome !== "undefined" && chrome.tabs) {
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (tabs[0]?.url) {
-                    try {
-                        const url = new URL(tabs[0].url);
-                        const hostname = url.hostname.replace(/^www\./, "");
-                        setCurrentDomain(hostname);
-                        
-                        // 현재 도메인 기존 활성화 상태를 스토리지에서 get
-                        initActive(hostname);
-                    } catch (e) {
-                        setCurrentDomain("Invalid URL");
-                    }
+    if (typeof chrome !== "undefined" && chrome.tabs) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]?.url) {
+                try {
+                    const url = new URL(tabs[0].url);
+                    // hostname(localhost) -> host(localhost:3001)로 변경
+                    const hostKey = url.host.replace(/^www\./, ""); 
+                    
+                    setCurrentDomain(hostKey);
+                    initActive(hostKey); // 이제 "localhost:3001"로 저장됩니다.
+                } catch (e) {
+                    setCurrentDomain("Invalid URL");
                 }
-            });
-        }
-    }, [initActive]);
+            }
+        });
+    }
+}, [initActive]);
 
     return(
         <div className="bg-white gap-2 flex flex-col w-full p-4">

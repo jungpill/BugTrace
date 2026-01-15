@@ -19,8 +19,14 @@ const manifest: ManifestV3Export = {
   content_scripts: [
     {
       matches: ["http://*/*", "https://*/*"],
-      js: ["src/content/main.ts"],
+      js: ["src/content/main.ts", ],
       run_at: "document_start",
+    },
+  ],
+  web_accessible_resources: [
+    {
+      resources: ["assets/hook.js"],
+      matches: ["<all_urls>"],
     },
   ],
 };

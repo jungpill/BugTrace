@@ -1,16 +1,19 @@
 import { MdKeyboardArrowRight } from "react-icons/md";
 import { useViewStore } from "../../Store/useViewStore";
+import type { ErrorRecord } from "../../type/types";
 
 interface ErrorProps {
     title: string
     dateMs: number
     domain: string
+    record: ErrorRecord
 }
 
 const ErrorLog = ({
     title,
     dateMs,
-    domain
+    domain,
+    record
     } : ErrorProps) => {
 
     const gotoDetail = useViewStore((p) => p.goToDetail)
@@ -38,12 +41,12 @@ const ErrorLog = ({
 
     return(
         <div className="flex">
-            <div className="flex flex-col gap-1 min-w-0 max-w-[80%]">
-                <h3 className="text-[16px] font-[500] truncate w-70">
+            <div className="flex flex-col gap-1 min-w-0 w-full">
+                <h3 className="text-[16px] font-[700] truncate w-70 text-red-600">
                     {title}
                 </h3>
 
-                <p>
+                <p className="font-[500] truncate w-70">
                     {relative} * {domain}
                 </p>
             </div>
@@ -54,7 +57,7 @@ const ErrorLog = ({
                 ml-auto w-7 h-7 text-gray-500 cursor-pointer rounded-xl 
                 hover:bg-gray-100
                 "
-                onClick={gotoDetail}
+                onClick={() => gotoDetail(record)}
                 />
             </div>
         </div>

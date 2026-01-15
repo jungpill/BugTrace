@@ -3,12 +3,9 @@ import type { ErrorRecord } from '../type/types';
 const RECORDS_KEY = "errorRecords";
 const MAX_RECORDS = 20;
 
-/**
- * 메시지 처리 핸들러 분리
- * (비동기 로직을 안전하게 처리하기 위해 리스너 밖으로 뺍니다)
- */
 async function handleMessages(msg: any, sendResponse: (response?: any) => void) {
   console.log("Background 수신 메시지:", msg.type);
+  console.log('실행됨')
 
   try {
     // 1. 에러 캡처 (Content Script -> Background)
@@ -21,13 +18,15 @@ async function handleMessages(msg: any, sendResponse: (response?: any) => void) 
       const next = [record, ...prev].slice(0, MAX_RECORDS);
       await chrome.storage.local.set({ [RECORDS_KEY]: next });
 
-      // [핵심] 팝업이 켜져 있다면 실시간 업데이트 알림 전송
-      chrome.runtime.sendMessage({ 
-        type: "RECORDS_UPDATED", 
-        records: next 
-      }).catch(() => {
-        // 팝업이 닫혀 있을 때 발생하는 에러는 정상적이므로 무시
-      });
+      // 팝업이 켜져 있다면 실시간 업데이트 알림 전송
+      chrome.runtime
+        .sendMessage({
+          type: "RECORDS_UPDATED",
+          records: next,
+        })
+        .catch(() => {
+          // 팝업이 닫혀있으면 정상적으로 실패할 수 있음
+        });
 
       sendResponse({ ok: true });
     }
