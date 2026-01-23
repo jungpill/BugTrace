@@ -24,11 +24,6 @@ const PopupHeader = () => {
             >
                 
             </div>
-
-            <BiSolidBellRing
-            className="w-8 h-8 ml-auto text-gray-600 p-1
-            hover:bg-gray-400 rounded-full cursor-pointer"
-            />
         </header>
     )
 }

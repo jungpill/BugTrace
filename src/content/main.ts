@@ -1,9 +1,6 @@
 // src/content/main.ts
 import type { Breadcrumb, ErrorRecord } from "../type/types";
 
-// 페이지가 열릴때마다 탭의 문서에 주입되어 실행
-console.log("BugTrace Content Script Loaded! Host:", location.host);
-
 type EnabledHosts = Record<string, boolean>;
 type HistoryStateFn = (data: any, unused: string, url?: string | URL | null) => void;
 
@@ -65,7 +62,6 @@ async function refreshEnabled() {
   const stored = await chrome.storage.local.get("enabledHosts");
   const enabledHosts = isEnabledHosts(stored.enabledHosts) ? stored.enabledHosts : {};
   enabled = !!enabledHosts[hostKey];
-  console.log("[BugTrace] 초기 상태 확인:", { hostKey, enabled, enabledHosts });
 }
 
 // 공통 record 생성/전송 (에러/네트워크 승격에서 재사용)
@@ -75,7 +71,7 @@ function sendRecord(record: ErrorRecord) {
       console.warn("[BugTrace-Main] CAPTURE_ERROR 전송 실패:", chrome.runtime.lastError.message);
       return;
     }
-    console.log("[BugTrace-Main] ✅ 서비스 워커 전송 완료:", res);
+
   });
 }
 
@@ -91,7 +87,6 @@ function shouldPromoteNetwork(ev: FromPageEventMsg["event"]): boolean {
   if (ev.errorType) return true;
   // 2) 400 ~ 500 사이 에러 
   if (typeof ev.status === "number" && ev.status >= 400){
-    console.log('400이상 에러 감지! ')
     return true
   }
   // 3) 서버 에러(500+)
@@ -154,7 +149,6 @@ window.addEventListener("message", async (event) => {
       },
     };
 
-    console.log("[BugTrace-Main] 🌐 네트워크 실패/지연 승격:", { message });
     sendRecord(record);
     return;
   }
@@ -164,11 +158,8 @@ window.addEventListener("message", async (event) => {
 
   const { source: pageSource, message, stack } = data;
 
-  console.log("[BugTrace-Main] 🚀 페이지로부터 에러 수신:", { pageSource, message });
-
   const currentEnabled = await isCurrentlyEnabled();
   if (!currentEnabled) {
-    console.warn("[BugTrace-Main] 수집 비활성화(OFF)라 전송 스킵");
     return;
   }
 
@@ -237,7 +228,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local" || !changes.enabledHosts) return;
   const nextHosts = isEnabledHosts(changes.enabledHosts.newValue) ? changes.enabledHosts.newValue : {};
   enabled = !!nextHosts[hostKey];
-  console.log("[BugTrace] 상태 변경됨:", { hostKey, enabled });
 });
 
 function injectHook() {
@@ -253,7 +243,6 @@ function injectHook() {
   script.async = false;
   root.appendChild(script);
   script.remove();
-  console.log("[BugTrace] hook.js injected into MAIN world:", script.src);
 }
 
 injectHook();
@@ -264,6 +253,4 @@ injectHook();
   await refreshEnabled();
   hookRoute();
   hookClicks();
-
-  console.log("[BugTrace] 모든 감시 준비 완료");
 })();
