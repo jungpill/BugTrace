@@ -130,8 +130,6 @@
 
       // loadend는 성공/실패 모두 호출
       xhr.addEventListener("loadend", function () {
-        console.log("[BugTrace-Hook] XHR end:", xhr.status, xhr.__bt_method, xhr.__bt_url);
-        console.log('어이구 왜 안되냐!')
         finalize();
       });
 
@@ -168,6 +166,5 @@
     rawError.apply(console, args);
   };
 
-  console.log("[BugTrace] Page Hook Injected Successfully");
   window.postMessage({ type: "FROM_PAGE_ERROR", source: "debug", message: "HOOK_LOADED" }, "*");
 })();

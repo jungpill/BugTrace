@@ -30,7 +30,7 @@ const SiteCaptureToggle = () => {
 
     return (
         <div className="bg-white gap-2 flex flex-col w-full p-4">
-            <p className="text-[14px] font-[800]">Current Site</p>
+            <p className="text-[14px] font-[800] text-">Current Site</p>
 
             <div className="flex items-center flex-row">
                 <p className="text-[18px] font-[700] text-gray-600 mr-auto">

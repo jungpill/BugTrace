@@ -4,8 +4,6 @@ const RECORDS_KEY = "errorRecords";
 const MAX_RECORDS = 20;
 
 async function handleMessages(msg: any, sendResponse: (response?: any) => void) {
-  console.log("Background 수신 메시지:", msg.type);
-  console.log('실행됨')
 
   try {
     // 1. 에러 캡처 (Content Script -> Background)
