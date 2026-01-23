@@ -58,7 +58,6 @@ async function handleMessages(msg: any, sendResponse: (response?: any) => void) 
   }
 }
 
-
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // 비동기 처리를 위해 handleMessages를 호출하고 true를 반환하여 채널을 유지함
   handleMessages(msg, sendResponse);
