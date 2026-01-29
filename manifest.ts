@@ -4,12 +4,17 @@ const manifest: ManifestV3Export = {
   manifest_version: 3,
   name: "BugTrace (dev)",
   version: "0.0.1",
+  icons: {
+    "16": "src/icons/16.png",
+    "48": "src/icons/48.png",
+    "128": "src/icons/128.png",
+  },
   action: {
     default_title: "BugTrace",
     default_popup: "src/popup/index.html",
   },
   background: {
-    service_worker: "src/background/service-worker.ts",
+    service_worker: "./src/background/service-worker.ts",
     type: "module",
   },
   permissions: ["storage", "activeTab", "tabs"],
