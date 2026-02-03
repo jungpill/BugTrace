@@ -102,11 +102,12 @@ window.addEventListener("message", async (event) => {
   const data = event.data as (FromPageErrorMsg | FromPageEventMsg) | undefined;
   if (!data) return;
 
+  const noiseKeywords = ["[debug]", "HOOK_LOADED", "Extension context invalidated"];
+
   // ---- 1) 네트워크 이벤트 수신 (FROM_PAGE_EVENT) ----
   if (data.type === "FROM_PAGE_EVENT" && data.event?.kind === "network") {
     const ev = data.event;
 
-    // breadcrumbs에 네트워크 이벤트도 쌓기 (Breadcrumb 타입에 network가 없으면 타입 에러 날 수 있어 임시 캐스팅)
     pushEvent({
       type: "network",
       ts: ev.ts,
@@ -119,16 +120,18 @@ window.addEventListener("message", async (event) => {
       errorType: ev.errorType,
     } as unknown as Breadcrumb);
 
-    // enabled=false면 pushEvent가 무시되지만, “승격”은 enabledHosts 기준으로 따로 체크
     const promote = shouldPromoteNetwork(ev);
     if (!promote) return;
 
     const currentEnabled = await isCurrentlyEnabled();
     if (!currentEnabled) return;
 
-    const message =
-      `[network] ${String(ev.transport).toUpperCase()} ${ev.method} ${ev.url} ` +
+    // 네트워크 용 메시지 생성
+    const networkMsg = `[network] ${String(ev.transport).toUpperCase()} ${ev.method} ${ev.url} ` +
       `${ev.errorType ? `(${ev.errorType})` : `status=${ev.status}`} duration=${ev.durationMs}ms`;
+
+    // 혹시 네트워크 메시지에도 노이즈가 있다면 필터링
+    if (noiseKeywords.some(keyword => networkMsg.includes(keyword))) return;
 
     const record: ErrorRecord = {
       id: `${Date.now()}`,
@@ -138,8 +141,7 @@ window.addEventListener("message", async (event) => {
         source: "network",
         ts: Date.now(),
         url: window.location.href,
-        message,
-        // 네트워크는 스택이 없으니 생략
+        message: networkMsg,
         stack: undefined,
       },
       breadcrumbs: [...buffer],
@@ -154,34 +156,37 @@ window.addEventListener("message", async (event) => {
   }
 
   // ---- 2) 기존 에러 수신 (FROM_PAGE_ERROR) ----
-  if (data.type !== "FROM_PAGE_ERROR") return;
+  if (data.type === "FROM_PAGE_ERROR") {
+    const { source: pageSource, message, stack } = data;
 
-  const { source: pageSource, message, stack } = data;
+    // 🚀 여기서 필터링! (message 변수가 정의된 직후)
+    if (noiseKeywords.some(keyword => message.includes(keyword))) {
+      return; 
+    }
 
-  const currentEnabled = await isCurrentlyEnabled();
-  if (!currentEnabled) {
-    return;
+    const currentEnabled = await isCurrentlyEnabled();
+    if (!currentEnabled) return;
+
+    const record: ErrorRecord = {
+      id: `${Date.now()}`,
+      host: hostKey,
+      capturedAt: Date.now(),
+      error: {
+        source: "error",
+        ts: Date.now(),
+        url: window.location.href,
+        message: `[${pageSource}] ${message}`,
+        stack,
+      },
+      breadcrumbs: [...buffer],
+      env: {
+        ua: navigator.userAgent,
+        viewport: { w: window.innerWidth, h: window.innerHeight },
+      },
+    };
+
+    sendRecord(record);
   }
-
-  const record: ErrorRecord = {
-    id: `${Date.now()}`,
-    host: hostKey,
-    capturedAt: Date.now(),
-    error: {
-      source: "error",
-      ts: Date.now(),
-      url: window.location.href,
-      message: `[${pageSource}] ${message}`,
-      stack,
-    },
-    breadcrumbs: [...buffer],
-    env: {
-      ua: navigator.userAgent,
-      viewport: { w: window.innerWidth, h: window.innerHeight },
-    },
-  };
-
-  sendRecord(record);
 });
 
 // ----------------- browser hooks -----------------

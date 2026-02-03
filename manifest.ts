@@ -17,7 +17,7 @@ const manifest: ManifestV3Export = {
     service_worker: "./src/background/service-worker.ts",
     type: "module",
   },
-  permissions: ["storage", "activeTab", "tabs"],
+  permissions: ["storage"],
   // 개발 단계에서는 테스트 편의를 위해 넓게 잡음.
   // MVP 안정화 후엔 특정 도메인만으로 줄이거나 optional_host_permissions로 전환 권장.
   host_permissions: ["http://*/*", "https://*/*"],
