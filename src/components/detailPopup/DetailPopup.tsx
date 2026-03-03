@@ -1,10 +1,6 @@
 import DetailHeader from "./DetailHeader"
 import DetailLog from "./DetailLog"
 
-interface Props{
-
-}
-
 const DetailPopup = () => {
 
     return(

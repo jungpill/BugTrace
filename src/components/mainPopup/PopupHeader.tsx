@@ -1,5 +1,4 @@
 import { AppImage } from "../../assets/images/images"
-import { BiSolidBellRing } from "react-icons/bi";
 import { useActiveStore } from "../../Store/useActiveStore";
 
 const PopupHeader = () => {

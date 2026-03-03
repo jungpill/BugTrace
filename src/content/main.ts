@@ -66,7 +66,7 @@ async function refreshEnabled() {
 
 // 공통 record 생성/전송 (에러/네트워크 승격에서 재사용)
 function sendRecord(record: ErrorRecord) {
-  chrome.runtime.sendMessage({ type: "CAPTURE_ERROR", record }, (res) => {
+  chrome.runtime.sendMessage({ type: "CAPTURE_ERROR", record }, () => {
     if (chrome.runtime.lastError) {
       console.warn("[BugTrace-Main] CAPTURE_ERROR 전송 실패:", chrome.runtime.lastError.message);
       return;

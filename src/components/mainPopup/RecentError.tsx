@@ -1,11 +1,9 @@
 import { useViewStore } from "../../Store/useViewStore";
 import { useEffect } from "react";
-import { IoIosArrowForward } from "react-icons/io";
 import ErrorLog from "./ErrorLog";
 
 const RecentError = () => {
-
-  const gotoDetail = useViewStore((p) => p.goToDetail)
+  
   const records = useViewStore((p) => p.records);
   const fetchRecords = useViewStore((p) => p.fetchRecords);
 
