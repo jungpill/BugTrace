@@ -20,7 +20,6 @@ const Root = () => {
       
       {currentPage === "DETAIL" && (
         <DetailPopup
-          
         />
       )}
     </React.StrictMode>

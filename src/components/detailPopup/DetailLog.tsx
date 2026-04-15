@@ -26,9 +26,6 @@ const DetailLog = () => {
         {/* 1. User Actions 영역: 독립 스크롤 */}
         <div className="p-4 rounded-lg bg-[#F8F9FA] border border-gray-200">
           {/* 에러 메시지도 길어질 수 있으므로 break-all 추가 */}
-          <p className="text-[14px] font-bold text-gray-900 pb-2 border-b border-gray-200 mb-3 break-all">
-            {record.error.message}
-          </p>
 
           <div className="space-y-2">
             <p className="text-[13px] font-semibold text-gray-700">

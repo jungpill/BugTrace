@@ -4,6 +4,7 @@ import { useViewStore } from "../../Store/useViewStore";
 const DetailHeader = () => {
 
     const gotoMain = useViewStore((p) => p.goToMain)
+    const record = useViewStore((p) => p.selectedRecord);
 
     return(
         <div className="
@@ -16,7 +17,7 @@ const DetailHeader = () => {
             />
 
             <h3 className="text-[16px] font-[500] truncate w-70">
-                    asdasdasdasasdasdas
+                    {record?.error.message || "Error Details"}
             </h3>
         </div>
     )

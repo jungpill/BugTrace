@@ -35,7 +35,7 @@ const RecentError = () => {
           ))
         ) : (
           // 에러가 없을 때 메시지
-          <p className="text-[14px] text-gray-400 py-4">확인된 에러가 없습니다.</p>
+          <p className="text-[14px] text-gray-400 py-4">No Errors Detected</p>
         )}
       </div>
     </div>
