@@ -2,15 +2,20 @@ import { useViewStore } from "../../Store/useViewStore";
 import { DefaultButton } from "../common/Button";
 import Copy from '../../assets/images/icon_copy.svg'
 import Download from '../../assets/images/icon_download.svg'
+import { useToastStore } from "../../Store/useToastStore";
+
 
 const DetailFooter = () => {
 
     const record = useViewStore((p) => p.selectedRecord);
+    const { showToast } = useToastStore();
 
     const handleDownloadErrorLog = () => {
-        if (!record || !record.breadcrumbs || !record.error.stack) return;
+    // 데이터가 없으면 중단
+    if (!record || !record.breadcrumbs || !record.error.stack) return;
 
-        // 1. 텍스트 내용 가공
+    try {
+        // 1. 텍스트 내용 가공 (기존 로직 유지)
         const userAction = `=== UserAction Report ===\n`;
         const timestamp = `Generated at: ${new Date().toLocaleString()}\n`;
         const divider = `---------------------------\n\n`;
@@ -29,8 +34,7 @@ const DetailFooter = () => {
         const userActionString = userAction + timestamp + divider + logContent;
         const stackTraceString = stackTrace + divider + stackContent;
 
-
-        // 2. Blob 객체 생성 (텍스트 파일 데이터)
+        // 2. Blob 객체 생성
         const blob = new Blob([userActionString, stackTraceString], { type: 'text/plain' });
 
         // 3. 다운로드 링크 생성 및 클릭 실행
@@ -38,18 +42,25 @@ const DetailFooter = () => {
         const link = document.createElement('a');
         link.href = url;
         
-        // 파일명 설정 (예: error_log_2023-10-27.txt)
         const fileName = `error_log_${new Date().toISOString().split('T')[0]}.txt`;
         link.download = fileName;
 
-        // 브라우저에 링크를 추가하고 클릭한 뒤 바로 제거
         document.body.appendChild(link);
-        link.click();
+        link.click(); // 다운로드 트리거
         document.body.removeChild(link);
 
         // 메모리 해제
         window.URL.revokeObjectURL(url);
-    };
+
+        // --- 성공 토스트 알림 ---
+        showToast('success', 'Logs downloaded successfully!');
+
+    } catch (err) {
+        // --- 실패 시 에러 처리 및 토스트 알림 ---
+        console.error('Failed to download logs:', err);
+        showToast('error', 'Failed to download logs. Please try again.');
+    }
+};
 
     const handleCopyLogs = () => {
         if (!record || !record.breadcrumbs || !record.error.stack) return;
@@ -74,7 +85,7 @@ const DetailFooter = () => {
         // 클립보드에 텍스트 복사
         navigator.clipboard.writeText(fullLogString)
             .then(() => {
-                alert('Logs copied to clipboard!');
+                showToast('success', 'Logs copied to clipboard!');
             })
             .catch((err) => {
                 console.error('Failed to copy logs: ', err);

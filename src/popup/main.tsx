@@ -4,6 +4,7 @@ import "./index.css";
 import Popup from "./Popup";
 import { useViewStore } from "../Store/useViewStore";
 import DetailPopup from "../components/detailPopup/DetailPopup";
+import Toast from "../components/common/Toast";
 
 export type PageType = "MAIN" | "DETAIL" | "SETTINGS";
 
@@ -13,6 +14,7 @@ const Root = () => {
 
   return (
     <React.StrictMode>
+      <Toast/>
       {/* 현재 상태에 따라 다른 컴포넌트 렌더링 */}
       {currentPage === "MAIN" && (
         <Popup/>
