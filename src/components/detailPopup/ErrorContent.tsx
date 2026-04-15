@@ -1,7 +1,7 @@
 import { useViewStore } from "../../Store/useViewStore"
 
 
-const ErrorCurrent = () => {
+const ErrorContent = () => {
 
     const record = useViewStore((p) => p.selectedRecord);
 
@@ -38,4 +38,4 @@ const ErrorCurrent = () => {
     )
 }
 
-export default ErrorCurrent
+export default ErrorContent

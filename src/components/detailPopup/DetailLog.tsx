@@ -1,5 +1,5 @@
 import { useViewStore } from "../../Store/useViewStore";
-import ErrorCurrent from "./ErrorCurrent";
+import ErrorContent from "./ErrorContent";
 import ErrorTrace from "./ErrorTrace";
 import DetailFooter from "./DetailFooter";
 
@@ -29,7 +29,7 @@ const DetailLog = () => {
 
       <div className="flex-1 overflow-hidden space-y-4">
         {/* 1. User Actions 영역: 독립 스크롤 */}
-        <ErrorCurrent/>
+        <ErrorContent/>
 
         {/* 2. Stack Trace 영역: 독립 스크롤 및 가로 스크롤 제거 */}
         <ErrorTrace/>
