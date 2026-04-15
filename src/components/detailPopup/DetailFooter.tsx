@@ -8,10 +8,10 @@ const DetailFooter = () => {
     const record = useViewStore((p) => p.selectedRecord);
 
     const handleDownloadErrorLog = () => {
-    if (!record || !record.breadcrumbs) return;
+    if (!record || !record.breadcrumbs || !record.error.stack) return;
 
     // 1. 텍스트 내용 가공
-    const title = `=== Error Log Report ===\n`;
+    const userAction = `=== UserAction Report ===\n`;
     const timestamp = `Generated at: ${new Date().toLocaleString()}\n`;
     const divider = `---------------------------\n\n`;
     
@@ -23,10 +23,15 @@ const DetailFooter = () => {
         return `${time} | ${action}`;
     }).join('\n');
 
-    const finalString = title + timestamp + divider + logContent;
+    const stackTrace = '\n\n=== Stack Trace ===\n';
+    const stackContent = record.error.stack || "No stack trace available";
+
+    const userActionString = userAction + timestamp + divider + logContent;
+    const stackTraceString = stackTrace + divider + stackContent;
+
 
     // 2. Blob 객체 생성 (텍스트 파일 데이터)
-    const blob = new Blob([finalString], { type: 'text/plain' });
+    const blob = new Blob([userActionString, stackTraceString], { type: 'text/plain' });
 
     // 3. 다운로드 링크 생성 및 클릭 실행
     const url = window.URL.createObjectURL(blob);
